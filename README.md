@@ -424,15 +424,49 @@ Spring框架提供了IoC（Inversion of Control）容器，当Spring Boot应用�
 
 ### 2. 怎么看待MyBatis？
 
+MyBatis 是一个开源的持久层框架，它在 Java 开发中广泛应用于数据库访问操作。
+
+- 它能简化数据库的访问，MyBatis 提供大量API方便地执行数据库的增删改查操作
+- 可扩展性强，可以和其他框架（如Spring）非常方便地整合
+
 ### 3.MyBatis是一个ORM的框架，什么是ORM框架？
 
+ORM（Object-Relational Mapping，对象关系映射）
+
+将关系数据库与面向对象模型进行映射，从而实现对象与数据库之间的数据转换和交互。
+
 ### 4. 在内存中是如何分配一个对象的呢？
+
+1. 在堆中申请内存空间
+2. 分配内存
+3. 对象初始化，设置默认值
+4. 执行构造函数
+5. 返回对象引用
 
 ### 5. 除了在堆中分配内存给对象，会不会在其他存储介质上分配呢？比如栈中呢？
 
 ### 6. 堆和栈有什么区别？
 
+堆是用于存储Java对象的一块内存区域，所有通过new关键字创建的对象都被存储在堆中。堆是线程共享的。
+
+栈是一种用于存储局部变量和方法调用的内存区域，每个线程都有自己的栈空间，不同线程之间的栈空间是独立的。
+
 ### 7. 在JVM中是如何加载一个对象的呢？
+
+主要分为加载、连接、初始化三个阶段
+
+1. 加载
+   查找并读取类的字节码文件，将其转换为JVM内部的数据结构，并在内存中创建一个对应的Class对象
+
+2. 连接
+
+   - 验证：验证字节码的正确性，包括文件格式、语义等方面的检查，以确保字节码的安全性和合法性。
+
+   - 准备：为类的静态变量分配内存，并设置默认初始值。
+   - 解析：将类的符号引用转换为直接引用，这是为了支持动态绑定和多态性。
+
+3. 初始化
+   执行类的初始化代码，包括静态变量的赋值和静态代码块的执行。
 
 ### 8. mysql介绍一些他的查询语句是如何进行查询的呢？
 
@@ -440,13 +474,81 @@ Spring框架提供了IoC（Inversion of Control）容器，当Spring Boot应用�
 
 ### 10. 创建一个表时支持几种存储引擎？
 
+InnoDB、MyISAM、BDB等(InnoDB、BDB提供事务安全表)
+
 ### 11. InnoDB有什么特点呢？
+
+1. 支持事务，允许对数据进行原子性操作，支持提交和回滚
+2. 行锁，多个事务可以同时对不同行的数据进行读写操作，提高性能
+3. 外键约束，在表之间建立关联，保证数据的一致性
+4. 数据的一致性和持久性，通过事务日志(redo log)可以在系统崩溃或者异常的状态下进行恢复
 
 ### 12.InnoDB如何实现事务机制的呢？
 
 ### 13. 事务的隔离级别有几个？
 
+四个
+
+| 隔离级别        | 脏读[^ 脏读] | 不可重复读[^ 不可重复读] | 幻读[^ 幻读] |
+| --------------- | :----------: | :----------------------: | :----------: |
+| Read uncommited |      ⭕       |            ⭕             |      ⭕       |
+| Read commited   |      ❌       |            ⭕             |      ⭕       |
+| Repeatable read |      ❌       |            ❌             |      ⭕       |
+| Serializable    |      ❌       |            ❌             |      ❌       |
+
+[参考资料](https://blog.csdn.net/justlpf/article/details/106835122)
+
+[^ 脏读]: 某个事务已更新一份数据，另一个事务在此时读取了同一份数据，由于某些原因，前一个RollBack了操作，则后一个事务所读取的数据就会是不正确的。
+[^ 不可重复读]: 在一个事务的两次查询之中数据不一致，这可能是两次查询过程中间插入了一个事务更新的原有的数据。
+[^ 幻读]: 在一个事务的两次查询中数据笔数不一致，例如有一个事务查询了几列(Row)数据，而另一个事务却在此时插入了新的几列数据，先前的事务在接下来的查询中，就有几列数据是未查询出来的，如果此时插入和另外一个事务插入的数据，就会报错。
+
 ### 14. 用多线程的方式写一段生产者和消费者的代码
+
+```java
+package product_consumer;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.LinkedList;
+
+/**
+ * @author Chen Y.J
+ * @date 2023/4/20 11:15
+ */
+@Slf4j
+public class MessageQueue {
+    //消息队列的集合
+    private final LinkedList<Message> list = new LinkedList<>();
+    //消息容量
+    private final int capacity;
+
+    public MessageQueue(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public synchronized Message getMessage() throws InterruptedException {
+        while (list.isEmpty()){
+            log.debug("队列为空，等待...");
+            this.wait();
+        }
+        Message message = list.removeFirst();
+        log.debug("取出消息{}", message);
+        this.notifyAll();
+        return message;
+    }
+    public synchronized void setMessage(Message message) throws InterruptedException {
+        while (list.size() == capacity){
+            log.debug("队列已满，等待...");
+            this.wait();
+        }
+        list.add(message);
+        log.debug("生产消息{}", message);
+        this.notifyAll();
+    }
+}
+```
+
+
 
 ### 15. wait函数有什么特点
 
