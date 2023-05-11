@@ -384,6 +384,38 @@ volatile能保证操作的有序性和可见性，
 
 ### 19. 有序链表中重复元素的删除
 
+给定一个已排序的链表的头 head ， 删除原始链表中所有重复数字的节点，只留下不同的数字 。返回 已排序的链表 。[力扣](https://leetcode.cn/problems/remove-duplicates-from-sorted-list/)
+
+示例 ：
+
+![](https://assets.leetcode.com/uploads/2021/01/04/linkedlist1.jpg)
+
+输入：head = [1,2,3,3,4,4,5]
+输出：[1,2,3,4,5]
+
+思路：左指针left和右指针right，右指针为左指针的下一个节点，如果指针指向的值相等代表有重复元素，右指针循环右移，直至遇到不同的值为止。
+```java
+class Solution {
+    public ListNode deleteDuplicates(ListNode head) {
+        ListNode left = head;
+        ListNode right = head != null ? head.next : null;
+        while(right != null){
+            if(left.val == right.val){//有重复元素
+                while(right.next != null && right.next.val == right.val){
+                    right = right.next;
+                }
+                //删除元素
+                right = right.next;//到节点4上
+                left.next = right; 
+            }
+            left = right;
+            if(right != null) right = right.next;
+        }
+        return head;
+    }
+}
+```
+
 ## 四、阿里简历评估(阿里集团-淘宝天猫商业集团-技术线-营销与平台策略技术)4.24
 
 
@@ -416,6 +448,10 @@ Spring框架提供了IoC（Inversion of Control）容器，当Spring Boot应用�
 
 ### 10. 为什么Redis的速度快？
 
+1. 高性能：Redis使用内存作为数据存储介质，因此具有非常高的读写性能，适用于对响应速度和吞吐量要求较高的应用场景。
+2. 数据结构丰富：Redis支持丰富的数据结构，包括字符串、哈希、列表、集合、有序集合等，可以满足不同的数据处理需求。
+3. 数据持久化：Redis支持数据持久化，可以将内存中的数据定时或手动写入磁盘，保证数据不会因进程退出或机器宕机而丢失。
+
 ### 11. End
 
 ## 六、5.8
@@ -445,11 +481,21 @@ ORM（Object-Relational Mapping，对象关系映射）
 
 ### 5. 除了在堆中分配内存给对象，会不会在其他存储介质上分配呢？比如栈中呢？
 
+在Java中，典型的对象不在堆上分配的情况有两种：TLAB（Thread Local Allocation Buffer，线程私有的分配缓冲区）和栈上分配（严格来说TLAB也是属于堆，只是在TLAB比较特殊）。
+
+![](https://img-blog.csdnimg.cn/20190420173121975.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3poYW9ob25nX2Jv,size_16,color_FFFFFF,t_70)
+
+为什么不直接在堆上分配呢？
+
+堆是所有线程共享的，对于竞争资源，必须采取必要的同步，需要对整个堆加锁，会影响效率。对于某些特殊情况，可以采取避免在堆上分配对象的办法，以提高对象创建和销毁的效率。
+
+[详细资料](https://blog.csdn.net/zhaohong_bo/article/details/89419480)
+
 ### 6. 堆和栈有什么区别？
 
-堆是用于存储Java对象的一块内存区域，所有通过new关键字创建的对象都被存储在堆中。堆是线程共享的。
+- 堆是用于存储Java对象的一块内存区域，所有通过new关键字创建的对象都被存储在堆中。堆是线程共享的。
 
-栈是一种用于存储局部变量和方法调用的内存区域，每个线程都有自己的栈空间，不同线程之间的栈空间是独立的。
+- 栈是一种用于存储局部变量和方法调用的内存区域，每个线程都有自己的栈空间，不同线程之间的栈空间是独立的。
 
 ### 7. 在JVM中是如何加载一个对象的呢？
 
@@ -470,7 +516,53 @@ ORM（Object-Relational Mapping，对象关系映射）
 
 ### 8. mysql介绍一些他的查询语句是如何进行查询的呢？
 
+1. 客户端（运行程序）先通过连接器连接到MySQL服务器
+2. 连接器通过数据库权限身份验证后，先查询数据库缓存是否存在（之前执行过相同条件的SQL查询），如果有会直接返回缓存中的数据。如果没有则会进入分析器
+3. 进入分析器后会对查询语句进行语法的分析，判断该查询语句SQL是否存在语法错误，如果存在查询语法错误，会直接返回给客户端错误，如果正确会进入优化器
+4. 优化器会对查询语句进行优化处理：如：如果一条语句用到了多个索引会判断哪个索引性能更好
+5. 最终会进入执行器，开始执行查询语句直到查询出满足条件的所有数据，然后进行返回
+
+
+
+![](https://img-blog.csdnimg.cn/img_convert/d979b153cf4c4b52b542c1b6fcc119b6.png)
+
+[参考资料](https://blog.csdn.net/kaituozhe_sh/article/details/110038689)
+
 ### 9. mysql中什么叫做回表？
+
+可以举一个简单的例子，我有一张用于用户登录的user表：
+
+| 字段名   | 类型        | 说明   |
+| -------- | ----------- | ------ |
+| id       | bigint(20)  | 主键ID |
+| username | varchar(20) | 用户名 |
+| password | varchar(20) | 密码   |
+
+
+假如现在有一个用户名为admin，密码为123的用户要登录，那我会先找出username为admin的那条用户数据
+
+```mysql
+SELECT * FROM user WHERE username = 'admin'
+```
+
+再根据查出来的user信息去对比密码是否正确
+这时你发现username字段是唯一的又经常作为where条件所以可以给username字段建一个索引，于是就给username建了一个普通的B+Tree索引。这时候就出问题的，因为MySQL的InnoDB使用聚簇索引，具体的数据只和主键索引放在一起，其他的索引只存储了数据的地址（主键id）。比如上面的例子中，我根据username索引找到的只是一个username为admin这条数据的id而不是这条数据信息，所以要找到整条数据信息要根据得到的id再去找。看完上面的流程，你应该已经发现问题了，==我要通过username找到id，再根据id找整条数据，这里有两个查找过程，这是影响效率的。就像上面的两个查找过程就是回表了。==
+
+**解决办法**
+使用覆盖索引可以解决上面所说的回表的问题。还是拿上面上面登录的例子来说，其实登录只需要判断用户名和密码，如果user表中有其他用户信息也是不需要的那我们能不能只查询一次就找到这个用户名对应的密码呢。这个是可以的，上面所说的分两步查找，第一步根据username查找是肯定不能少的，那我们只要把password和索引username放到一起就可以了。我们可以建立一个（username、password）的组合索引，这里username一定要放在前面，然后我们把sql语句改一下
+
+```mysql
+SELECT username, password FROM user WHERE username = 'admin'
+```
+
+或
+
+```mysql
+SELECT password FROM user WHERE username = 'admin'
+```
+
+这样建立组合索引后根据username查找password，只要一步查找就可以查找到，因为password已经是username索引的一部分了，直接可以查出来，不再需要通过id找对应的整条数据。覆盖索引就是覆盖了多个列（字段）的索引。
+[参考资料](https://blog.csdn.net/dong_ly/article/details/106627876)
 
 ### 10. 创建一个表时支持几种存储引擎？
 
@@ -484,6 +576,16 @@ InnoDB、MyISAM、BDB等(InnoDB、BDB提供事务安全表)
 4. 数据的一致性和持久性，通过事务日志(redo log)可以在系统崩溃或者异常的状态下进行恢复
 
 ### 12.InnoDB如何实现事务机制的呢？
+
+利用==回滚日志（undo log）==和==重做日志（redo log）==两种表实现事务，并实现 MVCC (多版本并发控制)；
+
+**在执行事务的每条SQL时，会先将数据原值写入undo log 中， 然后执行SQL对数据进行修改，最后将修改后的值写入redo log中。**
+
+redo log 重做日志包括两部分：1 是内存中的重做日志缓冲 ；2 是重做日志文件。在事务提交时，必须先将该事务的所有日志写入到重做日志文件进行持久化，待事务commit操作完成才算完成。
+
+**当一个事务中的所有SQL都执行成功后，会将redo log 缓存中的数据刷入磁盘，然后提交。如果发生回滚，会根据undo log 恢复数据。**
+
+[参考资料](https://blog.csdn.net/argleary/article/details/104189850)
 
 ### 13. 事务的隔离级别有几个？
 
@@ -548,13 +650,79 @@ public class MessageQueue {
 }
 ```
 
+测试：
 
+```java
+package product_consumer;
+
+/**
+ * @author Chen Y.J
+ * @date 2023/4/20 14:41
+ */
+public class Test {
+    public static void main(String[] args) {
+        MessageQueue queue = new MessageQueue(2);
+        //生产者线程
+        for (int i = 0; i < 3; i++) {
+            int id = i;
+            new Thread(() -> {
+                try {
+                    queue.setMessage(new Message(id, "mess" + id));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }, "product" + i).start();
+        }
+        new Thread(() -> {
+            while (true){
+                try {
+                    Thread.sleep(1000);
+                    queue.getMessage();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, "consumer").start();
+    }
+}
+```
+
+```
+2023-04-20 14:54:03 [DEBUG] [product0] product_consumer.MessageQueue:38 - 生产消息Message{id=0, message=mess0}
+2023-04-20 14:54:03 [DEBUG] [product1] product_consumer.MessageQueue:38 - 生产消息Message{id=1, message=mess1}
+2023-04-20 14:54:03 [DEBUG] [product2] product_consumer.MessageQueue:34 - 队列已满，等待...
+2023-04-20 14:54:04 [DEBUG] [consumer] product_consumer.MessageQueue:28 - 取出消息Message{id=0, message=mess0}
+2023-04-20 14:54:04 [DEBUG] [product2] product_consumer.MessageQueue:38 - 生产消息Message{id=2, message=mess2}
+2023-04-20 14:54:05 [DEBUG] [consumer] product_consumer.MessageQueue:28 - 取出消息Message{id=1, message=mess1}
+2023-04-20 14:54:06 [DEBUG] [consumer] product_consumer.MessageQueue:28 - 取出消息Message{id=2, message=mess2}
+2023-04-20 14:54:07 [DEBUG] [consumer] product_consumer.MessageQueue:24 - 队列为空，等待...
+```
 
 ### 15. wait函数有什么特点
 
+1. wait()是Object类的一个方法，任意对象都可以使用，但是必须持有锁才能调用
+2. 调用了wait()之后，线程会进入等待状态，等待其他线程调用notify()或notifyAll()将其唤醒
+3. 调用了wait()之后，当前线程会释放锁
+4. wait()应该放在while循环中，防止虚假唤醒
+
 ### 16. sleep函数和yield函数有什么区别呢
 
+|        | sleep                        | yield                                           |
+| ------ | ---------------------------- | ----------------------------------------------- |
+| 功能   | 使当前线程暂停执行指定的时间 | 放弃当前的 CPU 执行时间片，让其他线程有机会执行 |
+| 锁释放 | 不会释放持有的锁             | 不会释放持有的锁                                |
+
 ### 17. 如果要你自己设计一个MVC框架，你要怎么实现呢？
+
+1. 模型（Model）层
+   - 定义数据模型和业务逻辑，封装数据访问和处理的操作。
+   - 提供数据的增删改查方法，与数据库或其他数据源进行交互。
+2. 视图（View）层：
+   - 负责展示数据和用户界面，接收用户的输入。
+   - 提供用户交互的界面，与用户进行信息交流。
+3. 控制器（Controller）层
+   - 接收用户的请求，并根据请求选择相应的处理逻辑。
+   - 调用模型层处理数据，将结果传递给视图层展示。
 
 ### 18. 提问环节
 
